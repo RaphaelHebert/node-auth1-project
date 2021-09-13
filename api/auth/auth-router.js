@@ -18,7 +18,6 @@ router.post('/register', checkUsernameFree, checkPasswordLength, async (req, res
 router.post('/login', checkUsernameExists, async (req, res, next) => {
   try{
     const [ user ] = await Model.findBy(req.body.username)
-    console.log(user, req.body.password)
     if(user && bcrypt.compareSync(req.body.password, user.password)) {
       req.session.user = user; //send cookie to client
       res.status(200).json({

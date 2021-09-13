@@ -9,13 +9,13 @@ const Model = require('../users/users-model')
   }
 */
 function restricted(req, res, next) {
- if(!req.body.user){
-   next({
-     status: 401,
-     message: "You shall not pass!"
-   })
+ if(req.session && req.session.user){
+  next()
  } else {
-   next()
+  next({
+    status: 401,
+    message: "You shall not pass!"
+  })
  }
 }
 
@@ -27,8 +27,8 @@ function restricted(req, res, next) {
     "message": "Username taken"
   }
 */
-function checkUsernameFree(req, res, next) {
-  const [ username ] = Model.findBy(req.body.username)
+async function checkUsernameFree(req, res, next) {
+  const [ username ] = await Model.findBy(req.body.username)
   if (username) {
     next({
       status: 422,
@@ -47,8 +47,8 @@ function checkUsernameFree(req, res, next) {
     "message": "Invalid credentials"
   }
 */
-function checkUsernameExists(req, res, next) {
-  const [ username ] = Model.findBy(req.body.username)
+async function checkUsernameExists(req, res, next) {
+  const [ username ] = await Model.findBy(req.body.username)
   if (!username) {
     next({
       status: 401,

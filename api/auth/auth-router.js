@@ -1,49 +1,55 @@
 // Require `checkUsernameFree`, `checkUsernameExists` and `checkPasswordLength`
 // middleware functions from `auth-middleware.js`. You will need them here!
+const { checkUsernameFree, checkUsernameExists, checkPasswordLength } = require('./auth-middleware')
+const express = require('express')
+const Model = require('../users/users-model')
+const router = express.Router()
+const bcrypt = require('bcryptjs')
 
+router.post('/register', checkUsernameFree, checkPasswordLength, async (req, res, next) => {
+  try{
+    const newUser = await Model.add({username: req.body.username, password: req.body.password})
+    res.status(200).json(newUser) 
+  } catch (err) {
+    next(err)
+  }
+})
 
+router.post('/login', checkUsernameExists, async (req, res, next) => {
+  try{
+    const [ user ] = await Model.findBy(req.body.username)
+    console.log(user, req.body.password)
+    if(user && bcrypt.compareSync(req.body.password, user.password)) {
+      req.session.user = user; //send cookie to client
+      res.status(200).json({
+        message: `Welcome ${user.username}`
+      })
+    } else {
+      res.status(401).json({
+        message: "Invalid credentials"
+      })
+    }
+  } catch (err) {
+    next(err)
+  }
+})
+
+router.get('/logout', (req, res, next) => {
+  if(req.session) {
+    req.session.destroy(err => {
+      if(err){
+        res.status(200).json({ message: err.message })
+      } else {
+        res.status(200).json({ message: "logged out" })
+        next(err)
+      }
+    })
+  } else {
+    res.status(200).json({message: "no session"})
+  }
+})
 /**
-  1 [POST] /api/auth/register { "username": "sue", "password": "1234" }
-
-  response:
-  status 200
-  {
-    "user_id": 2,
-    "username": "sue"
-  }
-
-  response on username taken:
-  status 422
-  {
-    "message": "Username taken"
-  }
-
-  response on password three chars or less:
-  status 422
-  {
-    "message": "Password must be longer than 3 chars"
-  }
- */
-
-
-/**
-  2 [POST] /api/auth/login { "username": "sue", "password": "1234" }
-
-  response:
-  status 200
-  {
-    "message": "Welcome sue!"
-  }
-
-  response on invalid credentials:
-  status 401
-  {
-    "message": "Invalid credentials"
-  }
- */
-
-
-/**
+ * 
   3 [GET] /api/auth/logout
 
   response for logged-in users:
@@ -60,4 +66,4 @@
  */
 
  
-// Don't forget to add the router to the `exports` object so it can be required in other modules
+module.exports = router

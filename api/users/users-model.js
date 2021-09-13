@@ -1,6 +1,6 @@
 const { unsubscribe } = require('superagent')
 const Helper = require('../../data/db-helper')
-
+const bcrypt = require('bcryptjs')
 /**
   resolves to an ARRAY with all users, each user having { user_id, username }
  */
@@ -27,8 +27,11 @@ async function findById(user_id) {
 
 /**
   resolves to the newly inserted user { user_id, username }
- */
+*/
 async function add(user) {
+  const hash =  bcrypt.hashSync(user.password, 12)
+  user.password = hash
+//   req.body.password = hash
   const newUserId = await Helper.add(user)
   const newUser = await Helper.findById(newUserId)
   return newUser
